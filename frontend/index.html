@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+  >
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Interview Drill">
+  <meta name="theme-color" content="#0f172a">
+  <title>Interview Drill</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="config-banner" class="banner hidden" role="status" aria-live="polite">
+    Worker URL not set. Tap <span class="banner-gear" aria-hidden="true">&#9881;</span> to
+    configure.
+  </div>
+
+  <main class="app-shell">
+    <section id="screen-deck-select" class="screen" aria-labelledby="deck-select-title">
+      <header class="top-bar">
+        <div class="top-bar-copy">
+          <p class="eyebrow">Voice Reps</p>
+          <h1 id="deck-select-title" class="app-title">Interview Drill</h1>
+        </div>
+        <button id="btn-admin" class="icon-btn" type="button" aria-label="Open admin settings">
+          &#9881;
+        </button>
+      </header>
+
+      <div class="screen-copy">
+        <p class="screen-kicker">Pick a deck and drill one talking point at a time.</p>
+      </div>
+
+      <div id="deck-list" class="deck-list" aria-live="polite"></div>
+    </section>
+
+    <section
+      id="screen-practice"
+      class="screen hidden"
+      aria-labelledby="practice-title"
+      aria-hidden="true"
+    >
+      <header class="top-bar">
+        <button id="btn-back-to-decks" class="back-btn" type="button">
+          &#8592; Decks
+        </button>
+        <span id="progress-indicator" class="progress-text">Card 1 of 1</span>
+      </header>
+
+      <div class="practice-body">
+        <div class="screen-copy">
+          <p class="eyebrow">Current Prompt</p>
+          <h2 id="practice-title" class="prompt-text"></h2>
+        </div>
+
+        <button id="btn-toggle-tp" class="toggle-btn" type="button">
+          Show talking point
+        </button>
+        <div id="talking-point-block" class="tp-block hidden" aria-live="polite"></div>
+
+        <div id="record-area" class="record-area">
+          <button id="btn-record" class="record-btn" type="button" aria-label="Start recording">
+            <span class="record-icon" aria-hidden="true">&#9679;</span>
+            <span id="record-label">Tap to record</span>
+          </button>
+        </div>
+
+        <div id="grade-panel" class="grade-panel hidden" aria-live="polite">
+          <div id="grade-score" class="grade-score"></div>
+          <ul id="grade-callouts" class="callout-list"></ul>
+          <div class="grade-actions">
+            <button id="btn-repeat" class="action-btn secondary" type="button">Repeat</button>
+            <button id="btn-next" class="action-btn primary" type="button">Next</button>
+          </div>
+        </div>
+
+        <div id="inline-error" class="inline-error hidden" role="alert" aria-live="assertive"></div>
+      </div>
+    </section>
+
+    <section
+      id="screen-summary"
+      class="screen hidden"
+      aria-labelledby="summary-title"
+      aria-hidden="true"
+    >
+      <header class="top-bar">
+        <div class="top-bar-copy">
+          <p class="eyebrow">Session Summary</p>
+          <h2 id="summary-title" class="screen-title">Session Complete</h2>
+        </div>
+      </header>
+
+      <div class="summary-body">
+        <div id="summary-stats" class="summary-stats"></div>
+        <div id="summary-flagged" class="summary-flagged"></div>
+        <div class="summary-actions">
+          <button id="btn-practice-again" class="action-btn primary" type="button">
+            Practice again
+          </button>
+          <button id="btn-change-deck" class="action-btn secondary" type="button">
+            Change deck
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section
+      id="screen-admin"
+      class="screen hidden"
+      aria-labelledby="admin-title"
+      aria-hidden="true"
+    >
+      <header class="top-bar">
+        <button id="btn-admin-back" class="back-btn" type="button">&#8592; Back</button>
+        <div class="top-bar-copy top-bar-copy-right">
+          <p class="eyebrow">Locked</p>
+          <h2 id="admin-title" class="screen-title">Admin</h2>
+        </div>
+      </header>
+
+      <div class="tab-bar" role="tablist" aria-label="Admin sections">
+        <button
+          id="tab-decks"
+          class="tab active"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls="admin-decks-panel"
+        >
+          Decks
+        </button>
+        <button
+          id="tab-settings"
+          class="tab"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="admin-settings-panel"
+        >
+          Settings
+        </button>
+      </div>
+
+      <div id="admin-decks-panel" class="tab-panel" role="tabpanel" aria-labelledby="tab-decks">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Deck Library</p>
+            <h3 class="panel-title">Edit prompts, targets, key points, and weights</h3>
+          </div>
+          <button id="btn-add-deck" class="action-btn secondary small" type="button">
+            + Add deck
+          </button>
+        </div>
+
+        <div id="admin-deck-list" class="admin-deck-list" aria-live="polite"></div>
+
+        <aside id="card-editor" class="admin-editor">
+          <div class="admin-editor-header">
+            <div>
+              <p class="eyebrow">Card Editor</p>
+              <h3 id="card-editor-title" class="panel-title">Select a card to edit</h3>
+            </div>
+            <button
+              id="btn-close-card-editor"
+              class="icon-btn hidden"
+              type="button"
+              aria-label="Close card editor"
+            >
+              &#10005;
+            </button>
+          </div>
+
+          <div id="card-editor-empty" class="editor-empty">
+            Pick a card from the list to edit its prompt, target talking point, key points, type,
+            and weight.
+          </div>
+
+          <div id="card-editor-form" class="editor-form hidden">
+            <label class="setting-group" for="input-card-prompt">
+              <span>Prompt</span>
+              <input id="input-card-prompt" type="text" placeholder="Walk me through your background.">
+            </label>
+
+            <label class="setting-group" for="input-card-target">
+              <span>Target talking point</span>
+              <textarea
+                id="input-card-target"
+                rows="6"
+                placeholder="Full static answer or STAR structure"
+              ></textarea>
+            </label>
+
+            <div class="setting-group">
+              <div class="key-points-header">
+                <span>Key points</span>
+                <button id="btn-add-key-point" class="action-btn secondary small" type="button">
+                  + Add key point
+                </button>
+              </div>
+              <div id="key-points-list" class="key-points-list"></div>
+            </div>
+
+            <label class="setting-group" for="input-card-type">
+              <span>Card type</span>
+              <select id="input-card-type">
+                <option value="opener">opener</option>
+                <option value="behavioral">behavioral</option>
+                <option value="star">star</option>
+                <option value="closer">closer</option>
+                <option value="general">general</option>
+              </select>
+            </label>
+
+            <div class="setting-group">
+              <span>Weight</span>
+              <div class="weight-row">
+                <input id="input-card-weight" type="number" readonly>
+                <button id="btn-reset-card-weight" class="action-btn secondary small" type="button">
+                  Reset to 1
+                </button>
+              </div>
+            </div>
+
+            <div class="editor-actions">
+              <button id="btn-save-card" class="action-btn primary" type="button">Save card</button>
+              <button id="btn-delete-card" class="action-btn danger" type="button">
+                Delete card
+              </button>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div
+        id="admin-settings-panel"
+        class="tab-panel hidden"
+        role="tabpanel"
+        aria-labelledby="tab-settings"
+      >
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Configuration</p>
+            <h3 class="panel-title">Worker routing, history, weights, and PIN</h3>
+          </div>
+        </div>
+
+        <label class="setting-group" for="input-worker-url">
+          <span>Cloudflare Worker URL</span>
+          <input
+            id="input-worker-url"
+            type="url"
+            placeholder="https://interview-drill.ACCOUNT.workers.dev"
+          >
+        </label>
+        <button id="btn-save-worker-url" class="action-btn primary small" type="button">
+          Save Worker URL
+        </button>
+
+        <div class="setting-group">
+          <span>Admin PIN</span>
+          <input
+            id="input-current-pin"
+            type="password"
+            placeholder="Current PIN"
+            maxlength="4"
+            inputmode="numeric"
+          >
+          <input
+            id="input-new-pin"
+            type="password"
+            placeholder="New PIN"
+            maxlength="4"
+            inputmode="numeric"
+          >
+          <button id="btn-change-pin" class="action-btn secondary small" type="button">
+            Change PIN
+          </button>
+        </div>
+
+        <div class="setting-group danger-zone">
+          <button id="btn-reset-weights" class="action-btn danger" type="button">
+            Reset all card weights
+          </button>
+          <button id="btn-clear-history" class="action-btn danger" type="button">
+            Clear session history
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="pin-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="pin-title">
+    <div class="modal-box">
+      <p id="pin-title" class="modal-title">Enter Admin PIN</p>
+      <input
+        id="pin-input"
+        type="password"
+        maxlength="4"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        aria-describedby="pin-error"
+      >
+      <p id="pin-error" class="pin-error hidden">Incorrect PIN</p>
+      <div class="modal-actions">
+        <button id="btn-pin-cancel" class="action-btn secondary" type="button">Cancel</button>
+        <button id="btn-pin-submit" class="action-btn primary" type="button">Enter</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
