@@ -474,7 +474,12 @@ async function transcribe(audioBlob, mimeType) {
     method: 'POST',
     body: formData,
   });
-  if (!res.ok) throw new Error('transcription_failed');
+  if (!res.ok) {
+    var errBody = '';
+    try { errBody = await res.text(); } catch (e) {}
+    console.error('Transcribe failed:', res.status, errBody);
+    throw new Error('transcription_failed: ' + res.status);
+  }
   var data = await res.json();
   return data.transcript;
 }
