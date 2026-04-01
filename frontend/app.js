@@ -543,6 +543,25 @@ async function processRecording(blob, mimeType) {
 
 // ─── Next / Repeat ───
 
+function handleSkip() {
+  if (!currentSession) return;
+
+  cancelActiveRecording();
+  clearInlineError();
+
+  if (currentSession.currentIndex >= currentSession.cards.length - 1) {
+    saveSessionToHistory();
+    renderSessionSummary();
+    showScreen(SCREENS.summary);
+    return;
+  }
+
+  currentSession.currentIndex++;
+  hideGradePanel();
+  resetRecordButton();
+  renderPracticeCard();
+}
+
 function handleRepeat() {
   var card = currentCard();
   if (!card) return;
@@ -1010,9 +1029,10 @@ function bindGlobalEvents() {
     toggleRecording();
   });
 
-  // Repeat / Next
+  // Repeat / Next / Skip
   document.getElementById('btn-repeat').addEventListener('click', handleRepeat);
   document.getElementById('btn-next').addEventListener('click', handleNext);
+  document.getElementById('btn-skip').addEventListener('click', handleSkip);
 
   // Summary buttons
   document.getElementById('btn-practice-again').addEventListener('click', function () {

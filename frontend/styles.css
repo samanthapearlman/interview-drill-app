@@ -422,6 +422,10 @@ input, textarea, select {
   box-shadow: none;
 }
 
+.skip-btn {
+  margin-top: 16px;
+}
+
 .record-icon {
   color: var(--danger);
   font-size: 2.4rem;
