@@ -1,6 +1,6 @@
-.worktrees/
 node_modules/
 .env
 .dev.vars
+*.local
+.wrangler/
 dist/
-*.log

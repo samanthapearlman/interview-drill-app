@@ -1,0 +1,9 @@
+name = "interview-drill"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+# Update ALLOWED_ORIGIN after GitHub Pages URL is confirmed.
+# Must match exactly: https://USERNAME.github.io or https://USERNAME.github.io/REPO
+# No trailing slash. Redeploy after updating.
+ALLOWED_ORIGIN = "https://REPLACE_WITH_GITHUB_PAGES_URL"
