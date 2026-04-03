@@ -15,6 +15,12 @@ function corsResponse(status, body, origin) {
   });
 }
 
+const PRICING = {
+  whisper_per_minute: 0.006,
+  haiku_input_per_token: 0.0000008,
+  haiku_output_per_token: 0.000004,
+};
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -104,9 +110,17 @@ async function handleTranscribe(request, env, allowedOrigin) {
     }
 
     const result = await whisperRes.json();
+    const durationSec = result.duration || 0;
+    const cost = {
+      service: 'whisper',
+      amount: Math.round((durationSec / 60) * PRICING.whisper_per_minute * 1000000) / 1000000,
+      unit: 'usd',
+      duration_sec: durationSec,
+    };
+
     return corsResponse(
       200,
-      JSON.stringify({ transcript: result.text }),
+      JSON.stringify({ transcript: result.text, cost }),
       allowedOrigin,
     );
   } catch (e) {
