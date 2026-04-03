@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   decksOverride: 'decks_override',
   sessionHistory: 'session_history',
   workerUrl: 'worker_url',
+  apiCosts: 'api_costs',
 };
 
 const SCREENS = {
@@ -45,6 +46,17 @@ function getAdminPin() {
 
 function getWorkerUrl() {
   return localStorage.getItem(STORAGE_KEYS.workerUrl) || '';
+}
+
+function recordCost(costData) {
+  if (!costData || typeof costData.amount !== 'number') return;
+  var costs = JSON.parse(localStorage.getItem(STORAGE_KEYS.apiCosts) || '[]');
+  costs.push({
+    date: new Date().toISOString().slice(0, 10),
+    service: costData.service,
+    amount: costData.amount,
+  });
+  localStorage.setItem(STORAGE_KEYS.apiCosts, JSON.stringify(costs));
 }
 
 function showScreen(screenId) {
@@ -481,6 +493,7 @@ async function transcribe(audioBlob, mimeType) {
     throw new Error('transcription_failed: ' + res.status);
   }
   var data = await res.json();
+  recordCost(data.cost);
   return data.transcript;
 }
 
@@ -496,7 +509,9 @@ async function grade(transcript, card) {
     }),
   });
   if (!res.ok) throw new Error('grading_failed');
-  return await res.json();
+  var data = await res.json();
+  recordCost(data.cost);
+  return data;
 }
 
 // ─── Process Recording ───
