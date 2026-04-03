@@ -147,6 +147,16 @@
         >
           Settings
         </button>
+        <button
+          id="tab-usage"
+          class="tab"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="admin-usage-panel"
+        >
+          Usage
+        </button>
       </div>
 
       <div id="admin-decks-panel" class="tab-panel" role="tabpanel" aria-labelledby="tab-decks">
@@ -298,6 +308,28 @@
             Clear session history
           </button>
         </div>
+      </div>
+
+      <div
+        id="admin-usage-panel"
+        class="tab-panel hidden"
+        role="tabpanel"
+        aria-labelledby="tab-usage"
+      >
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">API Spend</p>
+            <h3 class="panel-title">Monthly cost breakdown</h3>
+          </div>
+        </div>
+
+        <div class="usage-month-nav">
+          <button id="btn-usage-prev" class="icon-btn" type="button" aria-label="Previous month">&#8592;</button>
+          <span id="usage-month-label" class="usage-month-label"></span>
+          <button id="btn-usage-next" class="icon-btn" type="button" aria-label="Next month">&#8594;</button>
+        </div>
+
+        <div id="usage-breakdown" class="usage-breakdown" aria-live="polite"></div>
       </div>
     </section>
   </main>
