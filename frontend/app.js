@@ -37,6 +37,7 @@ let discardOnStop = false;
 let adminExpandedDeckIds = new Set();
 let adminSelection = null;
 let adminDraft = null;
+let usageMonth = null;
 
 // ─── Helpers ───
 
@@ -993,6 +994,64 @@ function bindAdminSettings() {
   });
 }
 
+// ─── Admin: Usage Tab ───
+
+function getMonthKey(date) {
+  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+}
+
+function getMonthLabel(monthKey) {
+  var parts = monthKey.split('-');
+  var date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1);
+  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function getMonthCosts(monthKey) {
+  var costs = JSON.parse(localStorage.getItem(STORAGE_KEYS.apiCosts) || '[]');
+  var whisper = 0;
+  var haiku = 0;
+  costs.forEach(function (entry) {
+    if (!entry.date || !entry.date.startsWith(monthKey)) return;
+    if (entry.service === 'whisper') whisper += entry.amount;
+    if (entry.service === 'haiku') haiku += entry.amount;
+  });
+  return { whisper: whisper, haiku: haiku, total: whisper + haiku };
+}
+
+function renderUsageTab() {
+  var now = new Date();
+  var currentMonthKey = getMonthKey(now);
+  if (!usageMonth) usageMonth = currentMonthKey;
+
+  document.getElementById('usage-month-label').textContent = getMonthLabel(usageMonth);
+  document.getElementById('btn-usage-next').disabled = (usageMonth >= currentMonthKey);
+
+  var data = getMonthCosts(usageMonth);
+  var container = document.getElementById('usage-breakdown');
+
+  if (data.total === 0) {
+    container.innerHTML = '<p class="usage-empty">No usage recorded</p>';
+    return;
+  }
+
+  var whisperPct = data.total > 0 ? Math.round((data.whisper / data.total) * 100) : 0;
+  var haikuPct = data.total > 0 ? Math.round((data.haiku / data.total) * 100) : 0;
+
+  container.innerHTML =
+    '<div class="usage-row usage-total">' +
+      '<span class="usage-label">Total</span>' +
+      '<span class="usage-amount">$' + data.total.toFixed(2) + '</span>' +
+    '</div>' +
+    '<div class="usage-row">' +
+      '<span class="usage-label">Transcription</span>' +
+      '<span class="usage-amount">$' + data.whisper.toFixed(2) + ' <span class="usage-pct">(' + whisperPct + '%)</span></span>' +
+    '</div>' +
+    '<div class="usage-row">' +
+      '<span class="usage-label">Grading</span>' +
+      '<span class="usage-amount">$' + data.haiku.toFixed(2) + ' <span class="usage-pct">(' + haikuPct + '%)</span></span>' +
+    '</div>';
+}
+
 // ─── Global Event Binding ───
 
 function bindGlobalEvents() {
@@ -1099,6 +1158,24 @@ function bindGlobalEvents() {
     adminExpandedDeckIds.clear();
     renderAdminDecks();
     renderDeckSelect();
+  });
+
+  // Usage month navigation
+  document.getElementById('btn-usage-prev').addEventListener('click', function () {
+    var parts = usageMonth.split('-');
+    var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1 - 1);
+    usageMonth = getMonthKey(d);
+    renderUsageTab();
+  });
+  document.getElementById('btn-usage-next').addEventListener('click', function () {
+    var currentMonthKey = getMonthKey(new Date());
+    var parts = usageMonth.split('-');
+    var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1 + 1);
+    var next = getMonthKey(d);
+    if (next <= currentMonthKey) {
+      usageMonth = next;
+      renderUsageTab();
+    }
   });
 
   // Admin settings
