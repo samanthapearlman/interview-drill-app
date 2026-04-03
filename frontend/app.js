@@ -304,7 +304,7 @@ function renderPracticeCard() {
   var tpBtn = document.getElementById('btn-toggle-tp');
   var visible = currentSession.talkingPointVisibility[card.id] || false;
 
-  tpBlock.innerHTML = escapeHtml(card.target || '').replace(/(\d+)\.\s/g, '<br>$1. ').replace(/^<br>/, '');
+  tpBlock.innerHTML = escapeHtml(card.target || '').replace(/\s+(\d+)\.\s/g, '<br><br>$1. ');
   tpBlock.classList.toggle('hidden', !visible);
   tpBtn.textContent = visible ? 'Hide talking point' : 'Show talking point';
 
