@@ -256,11 +256,23 @@ Rules:
       );
     }
 
+    const usage = claudeData.usage || {};
+    const inputTokens = usage.input_tokens || 0;
+    const outputTokens = usage.output_tokens || 0;
+    const cost = {
+      service: 'haiku',
+      amount: Math.round((inputTokens * PRICING.haiku_input_per_token + outputTokens * PRICING.haiku_output_per_token) * 1000000) / 1000000,
+      unit: 'usd',
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+    };
+
     return corsResponse(
       200,
       JSON.stringify({
         score: gradeResult.score,
         callouts: gradeResult.callouts,
+        cost,
       }),
       allowedOrigin,
     );
