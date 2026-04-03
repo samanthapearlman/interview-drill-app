@@ -1061,6 +1061,23 @@ function bindGlobalEvents() {
     renderAdminDecks();
   });
 
+  // Reset decks to server version
+  document.getElementById('btn-reset-decks').addEventListener('click', async function () {
+    if (!window.confirm('Reset all decks to the server version? Local edits will be lost.')) return;
+    localStorage.removeItem(STORAGE_KEYS.decksOverride);
+    try {
+      var response = await fetch('data/decks.json', { cache: 'no-store' });
+      if (!response.ok) throw new Error('fetch failed');
+      decksData = await response.json();
+    } catch (e) {
+      alert('Failed to fetch server decks. Check your connection.');
+      return;
+    }
+    adminExpandedDeckIds.clear();
+    renderAdminDecks();
+    renderDeckSelect();
+  });
+
   // Admin settings
   bindAdminSettings();
 }

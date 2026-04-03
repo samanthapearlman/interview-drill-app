@@ -602,6 +602,11 @@ input, textarea, select {
   gap: 12px;
 }
 
+.btn-group {
+  display: flex;
+  gap: 8px;
+}
+
 .admin-deck-list {
   display: flex;
   flex-direction: column;
