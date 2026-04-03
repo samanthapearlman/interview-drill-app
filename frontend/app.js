@@ -660,24 +660,29 @@ function renderSessionSummary() {
 // ─── Admin: Tab Switching ───
 
 function switchAdminTab(tab) {
-  var tabDecks = document.getElementById('tab-decks');
-  var tabSettings = document.getElementById('tab-settings');
-  var panelDecks = document.getElementById('admin-decks-panel');
-  var panelSettings = document.getElementById('admin-settings-panel');
+  var tabs = {
+    decks: { tab: 'tab-decks', panel: 'admin-decks-panel' },
+    settings: { tab: 'tab-settings', panel: 'admin-settings-panel' },
+    usage: { tab: 'tab-usage', panel: 'admin-usage-panel' },
+  };
 
-  if (tab === 'decks') {
-    tabDecks.classList.add('active');
-    tabSettings.classList.remove('active');
-    panelDecks.classList.remove('hidden');
-    panelSettings.classList.add('hidden');
-    renderAdminDecks();
-  } else {
-    tabSettings.classList.add('active');
-    tabDecks.classList.remove('active');
-    panelSettings.classList.remove('hidden');
-    panelDecks.classList.add('hidden');
-    renderAdminSettings();
-  }
+  Object.keys(tabs).forEach(function (key) {
+    var t = document.getElementById(tabs[key].tab);
+    var p = document.getElementById(tabs[key].panel);
+    if (key === tab) {
+      t.classList.add('active');
+      t.setAttribute('aria-selected', 'true');
+      p.classList.remove('hidden');
+    } else {
+      t.classList.remove('active');
+      t.setAttribute('aria-selected', 'false');
+      p.classList.add('hidden');
+    }
+  });
+
+  if (tab === 'decks') renderAdminDecks();
+  if (tab === 'settings') renderAdminSettings();
+  if (tab === 'usage') renderUsageTab();
 }
 
 // ─── Admin: Decks Tab ───
@@ -1030,6 +1035,9 @@ function bindGlobalEvents() {
   });
   document.getElementById('tab-settings').addEventListener('click', function () {
     switchAdminTab('settings');
+  });
+  document.getElementById('tab-usage').addEventListener('click', function () {
+    switchAdminTab('usage');
   });
 
   // Talking point toggle
