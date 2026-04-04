@@ -1,7 +1,7 @@
 const CORS_HEADERS = (origin) => ({
   'Access-Control-Allow-Origin': origin,
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Max-Age': '86400',
 });
 
@@ -13,6 +13,12 @@ function corsResponse(status, body, origin) {
       'Content-Type': 'application/json',
     },
   });
+}
+
+function validateToken(request, env) {
+  const authHeader = request.headers.get('Authorization') || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  return env.API_TOKEN && token === env.API_TOKEN;
 }
 
 const PRICING = {
@@ -34,7 +40,6 @@ export default {
           headers: CORS_HEADERS(allowedOrigin),
         });
       }
-
       return new Response('Forbidden', { status: 403 });
     }
 
@@ -45,12 +50,24 @@ export default {
       });
     }
 
+    if (!validateToken(request, env)) {
+      return corsResponse(403, JSON.stringify({ error: 'forbidden' }), allowedOrigin);
+    }
+
     if (url.pathname === '/transcribe' && request.method === 'POST') {
       return handleTranscribe(request, env, allowedOrigin);
     }
 
     if (url.pathname === '/grade' && request.method === 'POST') {
       return handleGrade(request, env, allowedOrigin);
+    }
+
+    if (url.pathname === '/decks' && request.method === 'GET') {
+      return handleGetDecks(request, env, allowedOrigin);
+    }
+
+    if (url.pathname === '/decks' && request.method === 'POST') {
+      return handlePostDecks(request, env, allowedOrigin);
     }
 
     return corsResponse(
@@ -60,6 +77,41 @@ export default {
     );
   },
 };
+
+async function handleGetDecks(request, env, allowedOrigin) {
+  try {
+    const raw = await env.INTERVIEW_DECKS.get('decks');
+    if (!raw) {
+      return corsResponse(200, JSON.stringify({ decks: [] }), allowedOrigin);
+    }
+    return corsResponse(200, raw, allowedOrigin);
+  } catch (e) {
+    console.error('handleGetDecks exception:', e);
+    return corsResponse(
+      500,
+      JSON.stringify({ error: 'decks_load_failed', message: e.message }),
+      allowedOrigin,
+    );
+  }
+}
+
+async function handlePostDecks(request, env, allowedOrigin) {
+  try {
+    const body = await request.json();
+    if (!body || !Array.isArray(body.decks)) {
+      return corsResponse(400, JSON.stringify({ error: 'invalid_body' }), allowedOrigin);
+    }
+    await env.INTERVIEW_DECKS.put('decks', JSON.stringify(body));
+    return corsResponse(200, JSON.stringify({ ok: true }), allowedOrigin);
+  } catch (e) {
+    console.error('handlePostDecks exception:', e);
+    return corsResponse(
+      500,
+      JSON.stringify({ error: 'decks_save_failed', message: e.message }),
+      allowedOrigin,
+    );
+  }
+}
 
 async function handleTranscribe(request, env, allowedOrigin) {
   try {
