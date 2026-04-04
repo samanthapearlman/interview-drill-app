@@ -91,17 +91,22 @@ function createTextElement(tagName, className, text) {
 // ─── Deck Data ───
 
 async function loadDecks() {
-  var override = localStorage.getItem(STORAGE_KEYS.decksOverride);
-  if (override) {
-    try {
-      decksData = JSON.parse(override);
-      return decksData;
-    } catch (e) {
-      localStorage.removeItem(STORAGE_KEYS.decksOverride);
-    }
+  var workerUrl = getWorkerUrl();
+  var token = getApiToken();
+
+  if (!workerUrl || !token) {
+    decksData = { decks: [] };
+    return decksData;
   }
-  var response = await fetch('data/decks.json', { cache: 'no-store' });
+
+  var response = await fetch(workerUrl + '/decks', {
+    headers: { 'Authorization': 'Bearer ' + token },
+  });
+
   if (!response.ok) throw new Error('decks_load_failed');
+
+  localStorage.removeItem(STORAGE_KEYS.decksOverride);
+
   decksData = await response.json();
   return decksData;
 }
@@ -1201,6 +1206,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     await loadDecks();
   } catch (e) {
     console.error('Failed to load decks:', e);
+    showInlineError('Could not load decks. Check your worker URL and token in Settings.');
   }
 
   renderDeckSelect();
