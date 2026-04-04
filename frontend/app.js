@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   decksOverride: 'decks_override',
   sessionHistory: 'session_history',
   workerUrl: 'worker_url',
+  apiToken: 'api_token',
   apiCosts: 'api_costs',
 };
 
@@ -47,6 +48,10 @@ function getAdminPin() {
 
 function getWorkerUrl() {
   return localStorage.getItem(STORAGE_KEYS.workerUrl) || '';
+}
+
+function getApiToken() {
+  return localStorage.getItem(STORAGE_KEYS.apiToken) || '';
 }
 
 function recordCost(costData) {
