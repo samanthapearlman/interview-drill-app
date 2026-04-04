@@ -111,8 +111,21 @@ async function loadDecks() {
   return decksData;
 }
 
-function saveDecksOverride() {
-  localStorage.setItem(STORAGE_KEYS.decksOverride, JSON.stringify(decksData));
+async function saveDecksToKV() {
+  var workerUrl = getWorkerUrl();
+  var token = getApiToken();
+  if (!workerUrl || !token) return;
+
+  var response = await fetch(workerUrl + '/decks', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(decksData),
+  });
+
+  if (!response.ok) throw new Error('decks_save_failed');
 }
 
 function getDeckById(deckId) {
@@ -615,7 +628,7 @@ function handleNext() {
       var sourceCard = deck.cards.find(function (c) { return c.id === card.id; });
       if (sourceCard) {
         sourceCard.weight = (Number(sourceCard.weight) || 1) + 1;
-        saveDecksOverride();
+        saveDecksToKV();
       }
     }
   }
@@ -728,13 +741,18 @@ function renderAdminDecks() {
     deleteBtn.type = 'button';
     deleteBtn.className = 'action-btn danger small';
     deleteBtn.textContent = 'Delete';
-    deleteBtn.addEventListener('click', function () {
+    deleteBtn.addEventListener('click', async function () {
       var msg = deck.cards.length > 0
         ? 'Delete "' + deck.name + '" and its ' + deck.cards.length + ' cards?'
         : 'Delete "' + deck.name + '"?';
       if (!window.confirm(msg)) return;
       decksData.decks = decksData.decks.filter(function (d) { return d.id !== deck.id; });
-      saveDecksOverride();
+      try {
+        await saveDecksToKV();
+      } catch (e) {
+        alert('Failed to save. Try again.');
+        return;
+      }
       adminExpandedDeckIds.delete(deck.id);
       renderAdminDecks();
     });
@@ -777,7 +795,7 @@ function renderAdminDecks() {
       addCardBtn.type = 'button';
       addCardBtn.className = 'action-btn secondary small';
       addCardBtn.textContent = '+ Add card';
-      addCardBtn.addEventListener('click', function () {
+      addCardBtn.addEventListener('click', async function () {
         var newId = deck.id + '-card-' + Date.now();
         deck.cards.push({
           id: newId,
@@ -787,7 +805,12 @@ function renderAdminDecks() {
           keyPoints: [],
           weight: 1,
         });
-        saveDecksOverride();
+        try {
+          await saveDecksToKV();
+        } catch (e) {
+          alert('Failed to save. Try again.');
+          return;
+        }
         adminSelection = { deckId: deck.id, cardId: newId };
         adminDraft = Object.assign({}, deck.cards[deck.cards.length - 1], {
           keyPoints: [],
@@ -884,10 +907,15 @@ function renderCardEditor(deck, card, cardIndex) {
   resetWeightBtn.type = 'button';
   resetWeightBtn.className = 'action-btn secondary small';
   resetWeightBtn.textContent = 'Reset to 1';
-  resetWeightBtn.addEventListener('click', function () {
+  resetWeightBtn.addEventListener('click', async function () {
     card.weight = 1;
     adminDraft.weight = 1;
-    saveDecksOverride();
+    try {
+      await saveDecksToKV();
+    } catch (e) {
+      alert('Failed to save. Try again.');
+      return;
+    }
     renderAdminDecks();
   });
 
@@ -899,14 +927,19 @@ function renderCardEditor(deck, card, cardIndex) {
   saveBtn.type = 'button';
   saveBtn.className = 'action-btn primary small';
   saveBtn.textContent = 'Save';
-  saveBtn.addEventListener('click', function () {
+  saveBtn.addEventListener('click', async function () {
     Object.assign(card, {
       type: adminDraft.type,
       prompt: adminDraft.prompt,
       target: adminDraft.target,
       keyPoints: adminDraft.keyPoints.slice(),
     });
-    saveDecksOverride();
+    try {
+      await saveDecksToKV();
+    } catch (e) {
+      alert('Failed to save. Try again.');
+      return;
+    }
     closeCardEditor();
     renderAdminDecks();
   });
@@ -924,10 +957,15 @@ function renderCardEditor(deck, card, cardIndex) {
   deleteCardBtn.type = 'button';
   deleteCardBtn.className = 'action-btn danger small';
   deleteCardBtn.textContent = 'Delete card';
-  deleteCardBtn.addEventListener('click', function () {
+  deleteCardBtn.addEventListener('click', async function () {
     if (!window.confirm('Delete this card?')) return;
     deck.cards.splice(cardIndex, 1);
-    saveDecksOverride();
+    try {
+      await saveDecksToKV();
+    } catch (e) {
+      alert('Failed to save. Try again.');
+      return;
+    }
     closeCardEditor();
     renderAdminDecks();
   });
@@ -994,12 +1032,17 @@ function bindAdminSettings() {
   });
 
   // Reset weights
-  document.getElementById('btn-reset-weights').addEventListener('click', function () {
+  document.getElementById('btn-reset-weights').addEventListener('click', async function () {
     if (!window.confirm('Reset all card weights to 1 across all decks?')) return;
     decksData.decks.forEach(function (deck) {
       deck.cards.forEach(function (card) { card.weight = 1; });
     });
-    saveDecksOverride();
+    try {
+      await saveDecksToKV();
+    } catch (e) {
+      alert('Failed to save. Try again.');
+      return;
+    }
     alert('All weights reset to 1.');
   });
 
@@ -1150,26 +1193,28 @@ function bindGlobalEvents() {
   });
 
   // Add deck
-  document.getElementById('btn-add-deck').addEventListener('click', function () {
+  document.getElementById('btn-add-deck').addEventListener('click', async function () {
     var name = prompt('Deck name:');
     if (!name || !name.trim()) return;
     var id = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now();
     decksData.decks.push({ id: id, name: name.trim(), cards: [] });
-    saveDecksOverride();
+    try {
+      await saveDecksToKV();
+    } catch (e) {
+      alert('Failed to save. Try again.');
+      return;
+    }
     adminExpandedDeckIds.add(id);
     renderAdminDecks();
   });
 
   // Reset decks to server version
   document.getElementById('btn-reset-decks').addEventListener('click', async function () {
-    if (!window.confirm('Reset all decks to the server version? Local edits will be lost.')) return;
-    localStorage.removeItem(STORAGE_KEYS.decksOverride);
+    if (!window.confirm('Reset all decks from KV? Local edits will be lost.')) return;
     try {
-      var response = await fetch('data/decks.json', { cache: 'no-store' });
-      if (!response.ok) throw new Error('fetch failed');
-      decksData = await response.json();
+      await loadDecks();
     } catch (e) {
-      alert('Failed to fetch server decks. Check your connection.');
+      alert('Failed to reload decks. Check your worker URL and token.');
       return;
     }
     adminExpandedDeckIds.clear();
