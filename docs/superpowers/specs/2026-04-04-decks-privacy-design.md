@@ -24,8 +24,8 @@ Move decks out of the repo entirely. Store in Cloudflare KV, served via an authe
 - KV free tier is sufficient (1GB storage, 100k reads/day)
 
 **New worker endpoints:**
-- `GET /decks` — returns decks JSON from KV; requires auth token
-- `POST /decks` — writes updated decks JSON to KV; requires auth token
+- `GET /decks` — returns `{ "decks": [...] }` from KV (same shape as current `decks.json`); requires auth token
+- `POST /decks` — accepts `{ "decks": [...] }` body, writes to KV; requires auth token
 
 **Auth token:**
 - A long random string stored as Cloudflare Worker secret `API_TOKEN`
@@ -65,7 +65,7 @@ Move decks out of the repo entirely. Store in Cloudflare KV, served via an authe
 **On save failure:** inline error shown in admin panel; in-memory state not updated; user can retry.
 
 ### Token setup (one-time)
-1. Generate a random token (e.g., `openssl rand -hex 32`)
+1. Generate a random token. In Git Bash: `openssl rand -hex 32`. In PowerShell: `[System.Web.Security.Membership]::GeneratePassword(40,0)` or just use a password manager to generate a 40+ character random string.
 2. Add as Cloudflare Worker secret: `wrangler secret put API_TOKEN`
 3. Redeploy worker
 4. Open app Settings on iPhone → paste token → Save
@@ -90,7 +90,7 @@ Move decks out of the repo entirely. Store in Cloudflare KV, served via an authe
 
 ## Git History Scrub
 
-**Tool:** `git filter-repo` (must be installed: `pip install git-filter-repo`)
+**Tool:** `git filter-repo` (install via `pip install git-filter-repo` or `pip3 install git-filter-repo` on Windows)
 
 **Command:**
 ```bash
@@ -99,9 +99,11 @@ git filter-repo --path frontend/data/decks.json --invert-paths
 
 **Steps:**
 1. Ensure all local changes are committed
-2. Run filter-repo command — rewrites all commits that touched `decks.json`
-3. Force-push to origin main: `git push origin main --force`
-4. Verify on GitHub that file is gone from all commits
+2. Note your remote URL first: `git remote get-url origin`
+3. Run filter-repo command — rewrites all commits that touched `decks.json`
+4. Re-add the remote (filter-repo removes it as a safety measure): `git remote add origin <url from step 2>`
+5. Force-push to origin main: `git push origin main --force`
+6. Verify on GitHub that file is gone from all commits
 
 **Note:** This is destructive and cannot be undone without a backup. Take a local copy of `decks.json` before running (to use as KV seed content).
 
@@ -111,15 +113,16 @@ git filter-repo --path frontend/data/decks.json --invert-paths
 
 ## Implementation Order
 
-1. Seed KV with current `decks.json` content (via Cloudflare dashboard)
-2. Add `API_TOKEN` worker secret + token validation middleware to worker
-3. Add `GET /decks` and `POST /decks` endpoints to worker; deploy
-4. Update frontend: replace static load with `loadDecks()`, update admin save, add token field to Settings; clear `decks_override` from localStorage on first successful KV load
-5. Smoke test on device — verify decks load and save correctly
-6. Delete `frontend/data/decks.json` from repo
-7. Run `git filter-repo` to scrub history
-8. Force-push to main
-9. Verify on GitHub Pages that app still works
+1. Create KV namespace in Cloudflare dashboard: Workers & Pages → KV → Create namespace → name it `INTERVIEW_DECKS`. Then bind it in `wrangler.toml` (add `[[kv_namespaces]]` block with namespace ID).
+2. Seed KV with current `decks.json` content (via Cloudflare dashboard)
+3. Add `API_TOKEN` worker secret + token validation middleware to worker
+4. Add `GET /decks` and `POST /decks` endpoints to worker; deploy
+5. Update frontend: replace static load with `loadDecks()`, update admin save, add token field to Settings; clear `decks_override` from localStorage on first successful KV load
+6. Smoke test on device — verify decks load and save correctly
+7. Delete `frontend/data/decks.json` from repo
+8. Run `git filter-repo` to scrub history
+9. Force-push to main
+10. Verify on GitHub Pages that app still works
 
 ---
 
