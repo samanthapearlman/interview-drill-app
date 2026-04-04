@@ -951,6 +951,8 @@ function closeCardEditor() {
 function renderAdminSettings() {
   var urlInput = document.getElementById('input-worker-url');
   if (urlInput) urlInput.value = getWorkerUrl();
+  var tokenInput = document.getElementById('input-api-token');
+  if (tokenInput) tokenInput.value = getApiToken();
 }
 
 function bindAdminSettings() {
@@ -961,6 +963,11 @@ function bindAdminSettings() {
     if (val.endsWith('/')) val = val.slice(0, -1);
     localStorage.setItem(STORAGE_KEYS.workerUrl, val);
     updateConfigBanner();
+  });
+
+  document.getElementById('btn-save-api-token').addEventListener('click', function () {
+    var val = document.getElementById('input-api-token').value.trim();
+    localStorage.setItem(STORAGE_KEYS.apiToken, val);
   });
 
   // PIN change
